@@ -209,9 +209,10 @@ function getSubjectOptionsHtml(selected){
 }
 function subjectFieldHtml(prefix, label, selected){
   selected = selected || (state.subjects[0] || '');
+  const showNewByDefault = state.subjects.length===0;
   return `<div class="field"><label>${label}</label>
     <select id="${prefix}-select" onchange="handleSubjectChange('${prefix}')">${getSubjectOptionsHtml(selected)}</select>
-    <div class="new-subject-row" id="${prefix}-newRow">
+    <div class="new-subject-row" id="${prefix}-newRow" ${showNewByDefault ? 'style="display:flex"' : ''}>
       <input id="${prefix}-newInput" placeholder="ชื่อวิชาใหม่">
       <button type="button" onclick="confirmNewSubject('${prefix}')">เพิ่ม</button>
     </div>
