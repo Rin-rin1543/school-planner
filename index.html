@@ -216,7 +216,26 @@ function subjectFieldHtml(prefix, label, selected){
       <input id="${prefix}-newInput" placeholder="ชื่อวิชาใหม่">
       <button type="button" onclick="confirmNewSubject('${prefix}')">เพิ่ม</button>
     </div>
+    ${state.subjects.length>0 ? `<div style="margin-top:6px;"><button type="button" class="link-btn" onclick="openManageSubjectsSheet()">🗑 จัดการ/ลบรายชื่อวิชา</button></div>` : ''}
   </div>`;
+}
+function openManageSubjectsSheet(){
+  const sorted = [...state.subjects].sort((a,b)=>a.localeCompare(b,'th'));
+  sheetContent.innerHTML = `
+    <h3>จัดการรายชื่อวิชา</h3>
+    ${sorted.length===0 ? '<div class="empty">ยังไม่มีวิชาในระบบ</div>' : sorted.map(s=>`
+      <div class="override-row"><span>${escapeHtml(s)}</span><button class="mini-btn" onclick="deleteSubject('${encodeURIComponent(s)}')">ลบ</button></div>
+    `).join('')}
+    <div class="sheet-actions"><button class="btn btn-primary" onclick="closeSheet()">ปิด</button></div>
+  `;
+  openSheet();
+}
+function deleteSubject(encoded){
+  const name = decodeURIComponent(encoded);
+  if(!confirm(`ลบวิชา "${name}" ออกจากรายการเลือก? (ข้อมูลที่เคยบันทึกไว้ก่อนหน้าจะไม่หายไป)`)) return;
+  state.subjects = state.subjects.filter(s=>s!==name);
+  saveData();
+  openManageSubjectsSheet();
 }
 function handleSubjectChange(prefix){
   const sel = document.getElementById(prefix+'-select');
