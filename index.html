@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1B2A4A">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>ตารางเรียน & นัดหมาย</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@400;500;600;700&family=Kanit:wght@400;500;600&display=swap');
+
+:root{
+  --ink:#1B2A4A;
+  --ink-soft:#33456B;
+  --paper:#F5F3ED;
+  --paper-line:#E4DFD1;
+  --yellow:#FFCB47;
+  --coral:#E85D4C;
+  --sage:#7FA98C;
+  --gray:#6B6B63;
+  --card:#FFFFFF;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; background:var(--paper); font-family:'Sarabun',sans-serif; color:var(--ink); min-height:100vh;}
+.app{max-width:480px; margin:0 auto; min-height:100vh; background:var(--paper); position:relative; padding-left:34px; padding-bottom:40px;}
+.spine{position:fixed; top:0; left:calc(50% - 240px); width:34px; height:100%; background:var(--ink); z-index:5;}
+@media (max-width:480px){ .spine{left:0;} }
+.spine .ring{width:14px;height:14px;border-radius:50%; background:var(--paper); position:absolute;left:10px; box-shadow: inset 0 2px 3px rgba(0,0,0,.4);}
+header{padding:22px 18px 10px 18px;}
+header .eyebrow{font-family:'Kanit',sans-serif; font-size:12px; letter-spacing:.12em; color:var(--gray); text-transform:uppercase;}
+header h1{font-family:'Chonburi',serif; font-size:24px; margin:4px 0 0 0; line-height:1.3; color:var(--ink);}
+.hero{margin:10px 18px 0 18px; background:var(--ink); border-radius:16px; padding:16px 18px; color:var(--paper); position:relative; overflow:hidden;}
+.hero:before{content:""; position:absolute; right:-30px; top:-30px; width:120px;height:120px;border-radius:50%; background:rgba(255,203,71,.12);}
+.hero .day{font-family:'Chonburi',serif; font-size:20px; color:var(--yellow);}
+.hero .date{font-family:'Kanit',sans-serif; font-size:12.5px; opacity:.8; margin-top:2px;}
+.hero .next{margin-top:12px; padding-top:10px; border-top:1px dashed rgba(245,243,237,.25);}
+.hero .next-label{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--sage); font-family:'Kanit',sans-serif;}
+.hero .next-title{font-size:16px; font-weight:600; margin-top:2px;}
+.hero .next-meta{font-size:12px; opacity:.75; margin-top:2px; font-family:'Kanit',sans-serif;}
+.prep-card{margin:10px 18px 0 18px; background:var(--card); border:2px solid var(--yellow); border-radius:14px; padding:13px 16px;}
+.prep-card .prep-title{font-family:'Kanit',sans-serif; font-weight:600; font-size:13px; color:var(--coral); display:flex; align-items:center; gap:6px;}
+.prep-list{margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;}
+.prep-chip{background:var(--paper); border:1px solid var(--paper-line); border-radius:16px; padding:5px 11px; font-size:12.5px; font-family:'Kanit',sans-serif;}
+.prep-chip.hw{border-color:var(--coral); color:var(--coral);}
+.prep-chip.exam{border-color:var(--ink); color:var(--ink); font-weight:600;}
+.prep-empty{font-size:12.5px; color:var(--gray); margin-top:6px;}
+.tabs{display:flex; margin:18px 18px 0 18px; gap:5px; overflow-x:auto;}
+.tab{flex:0 0 auto; padding:10px 13px 9px 13px; font-family:'Kanit',sans-serif; font-weight:500; font-size:13.5px; border-radius:12px 12px 0 0; background:transparent; color:var(--gray); cursor:pointer; border:2px solid transparent; border-bottom:none; white-space:nowrap;}
+.tab.active{background:var(--card); color:var(--ink); border-color:var(--paper-line); font-weight:600;}
+.panel{background:var(--card); margin:0 18px; border-radius:0 12px 12px 12px; border:2px solid var(--paper-line); padding:16px; min-height:300px;}
+.date-strip{display:flex; gap:7px; overflow-x:auto; padding-bottom:10px; margin-bottom:6px; border-bottom:1px solid var(--paper-line);}
+.dchip{flex:0 0 auto; width:46px; text-align:center; padding:7px 4px; border-radius:12px; background:var(--paper); cursor:pointer; border:1.5px solid var(--paper-line); position:relative;}
+.dchip .dow{font-family:'Kanit',sans-serif; font-size:10.5px; color:var(--gray);}
+.dchip .dnum{font-family:'Kanit',sans-serif; font-size:15px; font-weight:600; margin-top:1px;}
+.dchip.active{background:var(--yellow); border-color:var(--yellow);}
+.dchip.today .dnum{color:var(--coral);}
+.dchip.active.today .dnum{color:var(--ink);}
+.dchip .swap-dot{position:absolute; top:3px; right:5px; width:6px;height:6px;border-radius:50%; background:var(--coral);}
+.day-actions{display:flex; justify-content:flex-end; margin-bottom:10px;}
+.link-btn{background:none; border:none; font-family:'Kanit',sans-serif; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; padding:2px;}
+.card-item{display:flex; gap:12px; padding:12px; border-radius:10px; background:var(--paper); margin-bottom:9px; border-left:4px solid var(--sage); position:relative;}
+.card-item.cancelled{opacity:.5; text-decoration:line-through;}
+.card-item .time-col{font-family:'Kanit',sans-serif; font-size:13px; color:var(--ink-soft); min-width:56px; font-weight:500;}
+.card-item .body-col{flex:1;}
+.card-item .title{font-weight:600; font-size:15px;}
+.card-item .meta{font-size:12.5px; color:var(--gray); margin-top:2px;}
+.card-actions{display:flex; flex-direction:column; gap:4px; align-items:flex-end;}
+.del-btn{background:none;border:none;color:var(--gray); font-size:16px; cursor:pointer; padding:0 2px; line-height:1;}
+.mini-btn{background:none;border:none;color:var(--ink-soft); font-size:11px; font-family:'Kanit',sans-serif; cursor:pointer; padding:0;}
+.date-badge{min-width:46px; text-align:center; background:var(--ink); color:var(--paper); border-radius:8px; padding:6px 0;}
+.date-badge.urgent{background:var(--coral);}
+.date-badge .dnum{font-family:'Kanit',sans-serif; font-size:17px; font-weight:600;}
+.date-badge .dmon{font-size:10px; opacity:.75;}
+.group-label{font-family:'Kanit',sans-serif; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--coral); margin:14px 0 8px 0; font-weight:600;}
+.group-label:first-child{margin-top:0;}
+.empty{text-align:center; color:var(--gray); padding:40px 10px; font-size:14px;}
+.checkbox{width:20px;height:20px; border-radius:6px; border:2px solid var(--paper-line); background:var(--card); cursor:pointer; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:13px; color:transparent;}
+.checkbox.checked{background:var(--sage); border-color:var(--sage); color:#fff;}
+.done-text{text-decoration:line-through; color:var(--gray);}
+.subj-tag{display:inline-block; font-family:'Kanit',sans-serif; font-size:11px; padding:2px 8px; border-radius:10px; background:var(--paper-line); color:var(--ink-soft); margin-top:3px;}
+.score-summary{display:flex; gap:8px; overflow-x:auto; margin-bottom:14px; padding-bottom:4px;}
+.score-pill{flex:0 0 auto; background:var(--paper); border:1px solid var(--paper-line); border-radius:12px; padding:10px 14px; text-align:center; min-width:80px;}
+.score-pill .sp-subj{font-size:11px; font-family:'Kanit',sans-serif; color:var(--gray);}
+.score-pill .sp-val{font-family:'Chonburi',serif; font-size:17px; margin-top:3px;}
+.fab{position:fixed; bottom:24px; right:calc(50% - 202px); width:56px;height:56px; border-radius:50%; background:var(--coral); color:#fff; border:none; font-size:28px; box-shadow:0 6px 16px rgba(232,93,76,.4); cursor:pointer; z-index:20;}
+@media (max-width:480px){ .fab{right:20px;} }
+.sheet-overlay{position:fixed; inset:0; background:rgba(27,42,74,.45); z-index:30; display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .2s;}
+.sheet-overlay.open{opacity:1; pointer-events:all;}
+.sheet{background:var(--card); width:100%; max-width:480px; margin:0 auto; border-radius:20px 20px 0 0; padding:20px 20px 26px 20px; transform:translateY(100%); transition:transform .25s; max-height:85vh; overflow-y:auto;}
+.sheet-overlay.open .sheet{transform:translateY(0);}
+.sheet h3{font-family:'Chonburi',serif; font-size:18px; margin:0 0 14px 0;}
+.field{margin-bottom:12px;}
+.field label{display:block; font-size:12.5px; font-family:'Kanit',sans-serif; color:var(--gray); margin-bottom:4px;}
+.field input, .field select, .field textarea{width:100%; padding:10px 12px; border-radius:8px; border:1.5px solid var(--paper-line); font-family:'Sarabun',sans-serif; font-size:14.5px; background:var(--paper); color:var(--ink);}
+.field textarea{resize:vertical; min-height:50px;}
+.row2{display:flex; gap:10px;}
+.row2 .field{flex:1;}
+.color-picks{display:flex; gap:8px; margin-top:2px;}
+.color-dot{width:28px;height:28px;border-radius:50%; cursor:pointer; border:2px solid transparent;}
+.color-dot.selected{border-color:var(--ink);}
+.sheet-actions{display:flex; gap:10px; margin-top:16px;}
+.btn{flex:1; padding:12px; border-radius:10px; border:none; font-family:'Kanit',sans-serif; font-weight:500; font-size:14.5px; cursor:pointer;}
+.btn-primary{background:var(--ink); color:var(--paper);}
+.btn-ghost{background:var(--paper); color:var(--gray); border:1px solid var(--paper-line);}
+.opt-btn{display:block; width:100%; text-align:left; padding:13px 14px; border-radius:10px; border:1.5px solid var(--paper-line); background:var(--paper); font-family:'Sarabun',sans-serif; font-size:14.5px; margin-bottom:9px; cursor:pointer; color:var(--ink);}
+.opt-btn .od{font-size:12px; color:var(--gray); margin-top:2px; font-family:'Kanit',sans-serif;}
+.override-row{display:flex; justify-content:space-between; align-items:center; background:var(--paper); border-radius:8px; padding:8px 10px; margin-bottom:7px; font-size:12.5px;}
+.loading{text-align:center; padding:60px 0; color:var(--gray); font-family:'Kanit',sans-serif;}
+.note{font-size:11.5px; color:var(--gray); margin-top:10px; line-height:1.5;}
+.notify-row{margin:8px 18px 0 18px;}
+.notify-row .link-btn{padding:0;}
+.new-subject-row{display:none; gap:6px; margin-top:6px;}
+.new-subject-row input{flex:1;}
+.new-subject-row button{flex:0 0 auto; padding:8px 12px; border-radius:8px; border:none; background:var(--ink); color:var(--paper); font-family:'Kanit',sans-serif; font-size:13px; cursor:pointer;}
+.img-strip{display:flex; gap:8px; overflow-x:auto; margin-bottom:12px;}
+.img-thumb{flex:0 0 auto; width:60px; height:60px; border-radius:10px; overflow:hidden; border:1.5px solid var(--paper-line); cursor:pointer;}
+.img-thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+.img-add{display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--gray); border-style:dashed; background:var(--paper);}
+</style>
+</head>
+<body>
+<div class="spine" id="spine"></div>
+<div class="app">
+  <header>
+    <div class="eyebrow">School Planner</div>
+    <h1>ตารางเรียน &amp; นัดหมาย</h1>
+  </header>
+  <div class="hero" id="hero"></div>
+  <div class="prep-card" id="prepCard"></div>
+  <div class="notify-row"><button class="link-btn" id="notifyBtn" onclick="requestNotifyPermission()">🔔 เปิดการแจ้งเตือนในเบราว์เซอร์</button></div>
+  <div class="tabs">
+    <div class="tab active" data-tab="schedule" onclick="switchTab('schedule')">ตารางเรียน</div>
+    <div class="tab" data-tab="exam" onclick="switchTab('exam')">ตารางสอบ</div>
+    <div class="tab" data-tab="hw" onclick="switchTab('hw')">การบ้าน</div>
+    <div class="tab" data-tab="todo" onclick="switchTab('todo')">To-do</div>
+    <div class="tab" data-tab="score" onclick="switchTab('score')">คะแนน</div>
+  </div>
+  <div class="panel" id="panel"><div class="loading">กำลังโหลด...</div></div>
+</div>
+
+<button class="fab" id="fabBtn">+</button>
+<input type="file" accept="image/*" id="imgFileInput" style="display:none" onchange="handleImageSelected(event)">
+
+<div class="sheet-overlay" id="overlay">
+  <div class="sheet" id="sheetContent"></div>
+</div>
+
+<script>
+const THAI_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const THAI_DAYS_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const COLORS = {sage:'#7FA98C', coral:'#E85D4C', yellow:'#FFCB47', navy:'#33456B'};
+
+let state = { classes: [], overrides: [], exams: [], homework: [], todos: [], scores: [], subjects: [], scheduleImages: [] };
+let activeTab = 'schedule';
+let selectedDate = todayStr();
+let loaded = false;
+let pendingImageDataUrl = null;
+let notifiedIds = new Set();
+
+function buildSpine(){
+  const spine = document.getElementById('spine');
+  let html='';
+  for(let i=0;i<Math.ceil(window.innerHeight/60);i++) html += `<div class="ring" style="top:${30+i*60}px"></div>`;
+  spine.innerHTML = html;
+}
+buildSpine();
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem('planner-data-v2');
+    if(raw){
+      const parsed = JSON.parse(raw);
+      state = Object.assign(state, parsed);
+    }
+  }catch(e){}
+  if(!state.subjects) state.subjects = [];
+  if(!state.scheduleImages) state.scheduleImages = [];
+  [...state.classes, ...state.homework, ...state.exams, ...state.scores].forEach(r=>ensureSubject(r.subject));
+  loaded = true;
+  updateNotifyBtn();
+  render();
+}
+async function saveData(){
+  try{ localStorage.setItem('planner-data-v2', JSON.stringify(state)); }
+  catch(e){ console.error('Save failed', e); alert('บันทึกไม่สำเร็จ อาจเป็นเพราะพื้นที่จัดเก็บเต็ม (รูปภาพเยอะเกินไป)'); }
+}
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function todayStr(){ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function addDays(dateStr, n){ const d=new Date(dateStr+'T00:00:00'); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function dow(dateStr){ return new Date(dateStr+'T00:00:00').getDay(); }
+function timeToMin(t){ if(!t) return 0; const [h,m]=t.split(':').map(Number); return h*60+m; }
+function fmtDateBadge(dateStr){ const d=new Date(dateStr+'T00:00:00'); return { num:d.getDate(), mon:THAI_MONTHS_SHORT[d.getMonth()] }; }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function daysUntil(dateStr){ const a=new Date(todayStr()+'T00:00:00'); const b=new Date(dateStr+'T00:00:00'); return Math.round((b-a)/86400000); }
+
+// ---- subject picker (shared across class/homework/exam/score forms) ----
+function ensureSubject(name){ if(name && !state.subjects.includes(name)) state.subjects.push(name); }
+function getSubjectOptionsHtml(selected){
+  const list = [...state.subjects].sort((a,b)=>a.localeCompare(b,'th'));
+  return list.map(s=>`<option value="${escapeHtml(s)}" ${s===selected?'selected':''}>${escapeHtml(s)}</option>`).join('')
+    + `<option value="__new__">+ เพิ่มวิชาใหม่...</option>`;
+}
+function subjectFieldHtml(prefix, label, selected){
+  selected = selected || (state.subjects[0] || '');
+  return `<div class="field"><label>${label}</label>
+    <select id="${prefix}-select" onchange="handleSubjectChange('${prefix}')">${getSubjectOptionsHtml(selected)}</select>
+    <div class="new-subject-row" id="${prefix}-newRow">
+      <input id="${prefix}-newInput" placeholder="ชื่อวิชาใหม่">
+      <button type="button" onclick="confirmNewSubject('${prefix}')">เพิ่ม</button>
+    </div>
+  </div>`;
+}
+function handleSubjectChange(prefix){
+  const sel = document.getElementById(prefix+'-select');
+  const row = document.getElementById(prefix+'-newRow');
+  if(sel.value==='__new__'){ row.style.display='flex'; document.getElementById(prefix+'-newInput').focus(); }
+  else { row.style.display='none'; }
+}
+function confirmNewSubject(prefix){
+  const input = document.getElementById(prefix+'-newInput');
+  const name = input.value.trim();
+  if(!name) return;
+  ensureSubject(name);
+  saveData();
+  const sel = document.getElementById(prefix+'-select');
+  sel.innerHTML = getSubjectOptionsHtml(name);
+  document.getElementById(prefix+'-newRow').style.display='none';
+  input.value='';
+}
+function getSubjectValue(prefix){
+  const sel = document.getElementById(prefix+'-select');
+  if(!sel || sel.value==='__new__') return '';
+  return sel.value;
+}
+
+// ---- browser notifications (only fire while this page stays open) ----
+function updateNotifyBtn(){
+  const btn = document.getElementById('notifyBtn');
+  if(!btn) return;
+  if(!('Notification' in window)){ btn.textContent='🔔 เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'; btn.disabled=true; return; }
+  if(Notification.permission==='granted') btn.textContent='🔔 เปิดแจ้งเตือนอยู่ (ต้องเปิดหน้านี้ค้างไว้)';
+  else if(Notification.permission==='denied') btn.textContent='🔕 การแจ้งเตือนถูกปิดกั้น (แก้ไขได้ที่ตั้งค่าเบราว์เซอร์)';
+  else btn.textContent='🔔 เปิดการแจ้งเตือนในเบราว์เซอร์';
+}
+function requestNotifyPermission(){
+  if(!('Notification' in window)){ alert('เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน'); return; }
+  Notification.requestPermission().then(()=>{ updateNotifyBtn(); checkAndNotify(); });
+}
+function checkAndNotify(){
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  const today = todayStr(), tmr = addDays(today,1);
+  state.homework.filter(h=>!h.done && (h.dueDate===today || h.dueDate===tmr)).forEach(h=>{
+    const key='hw-'+h.id;
+    if(!notifiedIds.has(key)){ notifiedIds.add(key); try{ new Notification('📝 งานใกล้กำหนดส่ง', {body:`${h.subject}: ${h.title} (${h.dueDate===today?'วันนี้':'พรุ่งนี้'})`}); }catch(e){} }
+  });
+  state.exams.filter(e=>e.date===today || e.date===tmr).forEach(e=>{
+    const key='ex-'+e.id;
+    if(!notifiedIds.has(key)){ notifiedIds.add(key); try{ new Notification('✏️ ใกล้สอบแล้ว', {body:`${e.subject}${e.title?': '+e.title:''} (${e.date===today?'วันนี้':'พรุ่งนี้'})`}); }catch(e2){} }
+  });
+}
+
+// ---- schedule reference images ----
+function handleImageSelected(event){
+  const file = event.target.files[0];
+  event.target.value = '';
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      const maxDim = 900;
+      let w=img.width, h=img.height;
+      if(w>h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; }
+      else if(h>=w && h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      pendingImageDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      openImageLabelSheet();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function openImageLabelSheet(){
+  sheetContent.innerHTML = `
+    <h3>แนบรูปอ้างอิง</h3>
+    <img src="${pendingImageDataUrl}" style="width:100%; border-radius:10px; margin-bottom:12px;">
+    <div class="field"><label>ชื่อ/คำอธิบายรูป (ไม่บังคับ)</label><input id="img-label" placeholder="เช่น ตารางเรียนจากโรงเรียน"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="pendingImageDataUrl=null; closeSheet();">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveScheduleImage()">บันทึกรูป</button>
+    </div>`;
+  openSheet();
+}
+function saveScheduleImage(){
+  const label = document.getElementById('img-label').value.trim();
+  state.scheduleImages.push({ id:'img'+Date.now(), label, dataUrl: pendingImageDataUrl });
+  pendingImageDataUrl = null;
+  saveData(); closeSheet(); render();
+}
+function viewScheduleImage(id){
+  const img = state.scheduleImages.find(i=>i.id===id);
+  if(!img) return;
+  sheetContent.innerHTML = `
+    <h3>${escapeHtml(img.label || 'รูปอ้างอิง')}</h3>
+    <img src="${img.dataUrl}" style="width:100%; border-radius:10px; margin-bottom:12px;">
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="deleteScheduleImage('${id}')">ลบรูปนี้</button>
+      <button class="btn btn-primary" onclick="closeSheet()">ปิด</button>
+    </div>`;
+  openSheet();
+}
+function deleteScheduleImage(id){ state.scheduleImages = state.scheduleImages.filter(i=>i.id!==id); saveData(); closeSheet(); render(); }
+
+// ---- effective schedule with overrides ----
+function getEffectiveClasses(dateStr){
+  const d = dow(dateStr);
+  const dayswap = state.overrides.find(o=>o.date===dateStr && o.action==='dayswap');
+  const useDay = dayswap ? dayswap.useDay : d;
+  let list = state.classes.filter(c=>c.day===useDay).map(c=>({...c, _effDate:dateStr}));
+  // per-class cancel/reschedule overrides only apply when not a dayswap date
+  if(!dayswap){
+    const cancels = state.overrides.filter(o=>o.date===dateStr && o.action==='cancel').map(o=>o.classId);
+    const resched = state.overrides.filter(o=>o.date===dateStr && o.action==='reschedule');
+    list = list.map(c=>{
+      const r = resched.find(o=>o.classId===c.id);
+      if(r) return {...c, start:r.newStart, end:r.newEnd, _rescheduled:true};
+      return c;
+    }).map(c=> cancels.includes(c.id) ? {...c, _cancelled:true} : c);
+  }
+  const extras = state.overrides.filter(o=>o.date===dateStr && o.action==='add')
+    .map(o=>({id:o.id, subject:o.subject, start:o.start, end:o.end, location:o.location, color:o.color, day:useDay, _extra:true}));
+  return [...list, ...extras].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+}
+
+function getNextUp(){
+  const now = new Date();
+  const nowMin = now.getHours()*60+now.getMinutes();
+  const todaysClasses = getEffectiveClasses(todayStr()).filter(c=>!c._cancelled).filter(c=>timeToMin(c.start)>=nowMin);
+  const todaysExams = state.exams.filter(e=>e.date===todayStr());
+  let candidates = [];
+  if(todaysClasses[0]) candidates.push({label:'คาบเรียนถัดไป', title:todaysClasses[0].subject, meta:`${todaysClasses[0].start}–${todaysClasses[0].end}${todaysClasses[0].location?' · '+todaysClasses[0].location:''}`, sortKey:timeToMin(todaysClasses[0].start)});
+  todaysExams.forEach(e=>candidates.push({label:'สอบวันนี้', title:e.title||e.subject, meta:`${e.time||''}${e.location?' · '+e.location:''}`, sortKey:timeToMin(e.time||'23:59')}));
+  candidates.sort((a,b)=>a.sortKey-b.sortKey);
+  return candidates[0] || null;
+}
+
+function renderHero(){
+  const now = new Date();
+  const next = getNextUp();
+  document.getElementById('hero').innerHTML = `
+    <div class="day">วัน${THAI_DAYS[now.getDay()]}</div>
+    <div class="date">${now.getDate()} ${THAI_MONTHS_SHORT[now.getMonth()]} ${now.getFullYear()+543}</div>
+    ${next ? `<div class="next"><div class="next-label">${next.label}</div><div class="next-title">${escapeHtml(next.title)}</div><div class="next-meta">${escapeHtml(next.meta)}</div></div>`
+      : `<div class="next"><div class="next-label">วันนี้</div><div class="next-title">ไม่มีรายการถัดไป</div></div>`}
+  `;
+}
+
+function renderPrepCard(){
+  const tmr = addDays(todayStr(),1);
+  const classes = getEffectiveClasses(tmr).filter(c=>!c._cancelled);
+  const subjects = [...new Set(classes.map(c=>c.subject))];
+  const hw = state.homework.filter(h=>h.dueDate===tmr && !h.done);
+  const exams = state.exams.filter(e=>e.date===tmr);
+  const empty = subjects.length===0 && hw.length===0 && exams.length===0;
+  document.getElementById('prepCard').innerHTML = `
+    <div class="prep-title">🎒 พรุ่งนี้ต้องเตรียม</div>
+    ${empty ? `<div class="prep-empty">พรุ่งนี้ยังไม่มีคาบเรียน/งาน/สอบที่บันทึกไว้</div>` : `
+    <div class="prep-list">
+      ${subjects.map(s=>`<span class="prep-chip">📘 ${escapeHtml(s)}</span>`).join('')}
+      ${hw.map(h=>`<span class="prep-chip hw">📝 ส่งงาน: ${escapeHtml(h.title)}</span>`).join('')}
+      ${exams.map(e=>`<span class="prep-chip exam">✏️ สอบ: ${escapeHtml(e.title||e.subject)}</span>`).join('')}
+    </div>`}
+  `;
+}
+
+function switchTab(tab){
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active', el.dataset.tab===tab));
+  render();
+}
+
+function render(){
+  if(!loaded) return;
+  renderHero();
+  renderPrepCard();
+  checkAndNotify();
+  const panel = document.getElementById('panel');
+  if(activeTab==='schedule') panel.innerHTML = renderScheduleTab();
+  else if(activeTab==='exam') panel.innerHTML = renderExamTab();
+  else if(activeTab==='hw') panel.innerHTML = renderHwTab();
+  else if(activeTab==='todo') panel.innerHTML = renderTodoTab();
+  else if(activeTab==='score') panel.innerHTML = renderScoreTab();
+}
+
+// ---------- SCHEDULE TAB ----------
+function renderScheduleTab(){
+  let strip = '';
+  for(let i=0;i<14;i++){
+    const dt = addDays(todayStr(), i);
+    const hasSwap = state.overrides.some(o=>o.date===dt);
+    const d = new Date(dt+'T00:00:00');
+    strip += `<div class="dchip ${dt===selectedDate?'active':''} ${dt===todayStr()?'today':''}" onclick="selectDate('${dt}')">
+      <div class="dow">${THAI_DAYS_SHORT[d.getDay()]}</div>
+      <div class="dnum">${d.getDate()}</div>
+      ${hasSwap?'<div class="swap-dot"></div>':''}
+    </div>`;
+  }
+  const list = getEffectiveClasses(selectedDate);
+  const overridesForDate = state.overrides.filter(o=>o.date===selectedDate);
+  let items = list.length ? list.map(c=>`
+    <div class="card-item ${c._cancelled?'cancelled':''}" style="border-left-color:${c.color||COLORS.sage}">
+      <div class="time-col">${c.start}<br>${c.end}</div>
+      <div class="body-col">
+        <div class="title">${escapeHtml(c.subject)}${c._extra?' (พิเศษ)':''}${c._rescheduled?' (เลื่อนเวลา)':''}</div>
+        ${c.location?`<div class="meta">📍 ${escapeHtml(c.location)}</div>`:''}
+      </div>
+      <button class="del-btn" onclick="deleteClass('${c.id}')" title="ลบออกจากตารางถาวร">✕</button>
+    </div>
+  `).join('') : `<div class="empty">ไม่มีคาบเรียนในวันนี้<br>แตะปุ่ม + เพื่อเพิ่มคาบประจำ</div>`;
+
+  let overrideList = overridesForDate.length ? `
+    <div class="group-label" style="margin-top:14px;">การปรับเปลี่ยนวันนี้</div>
+    ${overridesForDate.map(o=>`
+      <div class="override-row">
+        <span>${describeOverride(o)}</span>
+        <button class="mini-btn" onclick="removeOverride('${o.id}')">ยกเลิก</button>
+      </div>
+    `).join('')}
+  ` : '';
+
+  const imgStrip = `
+    <div class="group-label" style="margin-top:0;">รูปอ้างอิงตารางเรียน</div>
+    <div class="img-strip">
+      ${state.scheduleImages.map(img=>`<div class="img-thumb" onclick="viewScheduleImage('${img.id}')"><img src="${img.dataUrl}"></div>`).join('')}
+      <div class="img-thumb img-add" onclick="document.getElementById('imgFileInput').click()">+</div>
+    </div>`;
+
+  return `${imgStrip}<div class="date-strip">${strip}</div>
+    <div class="day-actions"><button class="link-btn" onclick="openDayOptionsSheet()">⇄ ปรับเปลี่ยนเฉพาะวันนี้</button></div>
+    ${items}${overrideList}`;
+}
+
+function describeOverride(o){
+  if(o.action==='dayswap') return `สลับให้ใช้ตารางวัน${THAI_DAYS[o.useDay]}แทน`;
+  if(o.action==='cancel'){ const c=state.classes.find(x=>x.id===o.classId); return `ยกเลิกคาบ ${c?c.subject:''}`; }
+  if(o.action==='reschedule'){ const c=state.classes.find(x=>x.id===o.classId); return `เลื่อนคาบ ${c?c.subject:''} เป็น ${o.newStart}-${o.newEnd}`; }
+  if(o.action==='add') return `เพิ่มคาบพิเศษ ${o.subject}`;
+  return '';
+}
+
+function selectDate(dt){ selectedDate = dt; render(); }
+function deleteClass(id){ state.classes = state.classes.filter(c=>c.id!==id); saveData(); render(); }
+function removeOverride(id){ state.overrides = state.overrides.filter(o=>o.id!==id); saveData(); render(); }
+
+// ---------- EXAM TAB ----------
+function renderExamTab(){
+  const sorted = [...state.exams].sort((a,b)=>a.date.localeCompare(b.date));
+  if(sorted.length===0) return `<div class="empty">ยังไม่มีตารางสอบ<br>แตะปุ่ม + เพื่อเพิ่ม</div>`;
+  return sorted.map(e=>{
+    const badge = fmtDateBadge(e.date);
+    const left = daysUntil(e.date);
+    const urgent = left<=2 && left>=0;
+    return `
+    <div class="card-item" style="border-left-color:${COLORS.navy}">
+      <div class="date-badge ${urgent?'urgent':''}"><div class="dnum">${badge.num}</div><div class="dmon">${badge.mon}</div></div>
+      <div class="body-col">
+        <div class="title">${escapeHtml(e.title||e.subject)}</div>
+        <span class="subj-tag">${escapeHtml(e.subject)}</span>
+        <div class="meta">${e.time?e.time+' · ':''}${escapeHtml(e.location||'')}</div>
+        <div class="meta">${left>=0 ? `อีก ${left} วัน` : 'ผ่านมาแล้ว'}</div>
+      </div>
+      <button class="del-btn" onclick="deleteExam('${e.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function deleteExam(id){ state.exams = state.exams.filter(e=>e.id!==id); saveData(); render(); }
+
+// ---------- HOMEWORK TAB ----------
+function renderHwTab(){
+  const sorted = [...state.homework].sort((a,b)=> (a.done-b.done) || a.dueDate.localeCompare(b.dueDate));
+  if(sorted.length===0) return `<div class="empty">ยังไม่มีงาน/การบ้าน<br>แตะปุ่ม + เพื่อเพิ่ม</div>`;
+  return sorted.map(h=>`
+    <div class="card-item" style="border-left-color:${COLORS.coral}">
+      <div class="checkbox ${h.done?'checked':''}" onclick="toggleHw('${h.id}')">${h.done?'✓':''}</div>
+      <div class="body-col">
+        <div class="title ${h.done?'done-text':''}">${escapeHtml(h.title)}</div>
+        <span class="subj-tag">${escapeHtml(h.subject)}</span>
+        <div class="meta">กำหนดส่ง ${h.dueDate}${h.dueTime?' '+h.dueTime:''}</div>
+        ${h.note?`<div class="meta">${escapeHtml(h.note)}</div>`:''}
+      </div>
+      <button class="del-btn" onclick="deleteHw('${h.id}')">✕</button>
+    </div>
+  `).join('');
+}
+function toggleHw(id){ const h=state.homework.find(x=>x.id===id); if(h){ h.done=!h.done; saveData(); render(); } }
+function deleteHw(id){ state.homework = state.homework.filter(h=>h.id!==id); saveData(); render(); }
+
+// ---------- TODO TAB ----------
+function renderTodoTab(){
+  const sorted = [...state.todos].sort((a,b)=> (a.done-b.done) || (a.dueDate||'').localeCompare(b.dueDate||''));
+  if(sorted.length===0) return `<div class="empty">ยังไม่มีรายการ To-do<br>แตะปุ่ม + เพื่อเพิ่ม</div>`;
+  return sorted.map(t=>`
+    <div class="card-item" style="border-left-color:${COLORS.yellow}">
+      <div class="checkbox ${t.done?'checked':''}" onclick="toggleTodo('${t.id}')">${t.done?'✓':''}</div>
+      <div class="body-col">
+        <div class="title ${t.done?'done-text':''}">${escapeHtml(t.title)}</div>
+        ${t.category?`<span class="subj-tag">${escapeHtml(t.category)}</span>`:''}
+        ${t.dueDate?`<div class="meta">กำหนด ${t.dueDate}</div>`:''}
+      </div>
+      <button class="del-btn" onclick="deleteTodo('${t.id}')">✕</button>
+    </div>
+  `).join('');
+}
+function toggleTodo(id){ const t=state.todos.find(x=>x.id===id); if(t){ t.done=!t.done; saveData(); render(); } }
+function deleteTodo(id){ state.todos = state.todos.filter(t=>t.id!==id); saveData(); render(); }
+
+// ---------- SCORE TAB ----------
+function renderScoreTab(){
+  const bySubj = {};
+  state.scores.forEach(s=>{ (bySubj[s.subject] = bySubj[s.subject]||[]).push(s); });
+  let summary = Object.entries(bySubj).map(([subj, arr])=>{
+    const pct = arr.reduce((sum,s)=>sum+(s.score/s.maxScore*100),0)/arr.length;
+    return `<div class="score-pill"><div class="sp-subj">${escapeHtml(subj)}</div><div class="sp-val">${pct.toFixed(0)}%</div></div>`;
+  }).join('');
+  const sorted = [...state.scores].sort((a,b)=>b.date.localeCompare(a.date));
+  if(sorted.length===0) return `<div class="empty">ยังไม่มีบันทึกคะแนน<br>แตะปุ่ม + เพื่อเพิ่ม</div>`;
+  const rows = sorted.map(s=>`
+    <div class="card-item" style="border-left-color:${COLORS.sage}">
+      <div class="body-col">
+        <div class="title">${escapeHtml(s.examName)}</div>
+        <span class="subj-tag">${escapeHtml(s.subject)}</span>
+        <div class="meta">${s.score} / ${s.maxScore} คะแนน (${(s.score/s.maxScore*100).toFixed(1)}%) · ${s.date}</div>
+      </div>
+      <button class="del-btn" onclick="deleteScore('${s.id}')">✕</button>
+    </div>
+  `).join('');
+  return `<div class="score-summary">${summary}</div>${rows}`;
+}
+function deleteScore(id){ state.scores = state.scores.filter(s=>s.id!==id); saveData(); render(); }
+
+// ---------- ADD (FAB) ----------
+const overlay = document.getElementById('overlay');
+const sheetContent = document.getElementById('sheetContent');
+document.getElementById('fabBtn').addEventListener('click', ()=>{
+  if(activeTab==='schedule') openClassSheet();
+  else if(activeTab==='exam') openExamSheet();
+  else if(activeTab==='hw') openHwSheet();
+  else if(activeTab==='todo') openTodoSheet();
+  else if(activeTab==='score') openScoreSheet();
+});
+overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeSheet(); });
+function openSheet(){ overlay.classList.add('open'); }
+function closeSheet(){ overlay.classList.remove('open'); }
+
+function openClassSheet(){
+  const selDay = dow(selectedDate);
+  sheetContent.innerHTML = `
+    <h3>เพิ่มคาบเรียนประจำ</h3>
+    ${subjectFieldHtml('f','วิชา')}
+    <div class="field"><label>วัน (ทุกสัปดาห์)</label>
+      <select id="f-day">${THAI_DAYS.map((d,i)=>`<option value="${i}" ${i===selDay?'selected':''}>${d}</option>`).join('')}</select>
+    </div>
+    <div class="row2">
+      <div class="field"><label>เวลาเริ่ม</label><input type="time" id="f-start" value="08:00"></div>
+      <div class="field"><label>เวลาสิ้นสุด</label><input type="time" id="f-end" value="09:00"></div>
+    </div>
+    <div class="field"><label>ห้อง/สถานที่ (ไม่บังคับ)</label><input id="f-loc" placeholder="เช่น ห้อง 301"></div>
+    <div class="field"><label>สี</label><div class="color-picks" id="colorPicks">
+      ${Object.entries(COLORS).map(([k,v])=>`<div class="color-dot ${k==='sage'?'selected':''}" data-color="${k}" style="background:${v}" onclick="pickColor(this,'${k}')"></div>`).join('')}
+    </div></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveClass()">บันทึก</button>
+    </div>`;
+  sheetContent.dataset.color = 'sage';
+  openSheet();
+}
+function pickColor(el, k){ sheetContent.dataset.color=k; document.querySelectorAll('.color-dot').forEach(e=>e.classList.toggle('selected', e===el)); }
+function saveClass(){
+  const subject = getSubjectValue('f');
+  if(!subject){ alert('กรุณาเลือกวิชา (หรือกด + เพิ่มวิชาใหม่แล้วกดปุ่มเพิ่ม)'); return; }
+  const day = parseInt(document.getElementById('f-day').value);
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  const location = document.getElementById('f-loc').value.trim();
+  const color = COLORS[sheetContent.dataset.color||'sage'];
+  state.classes.push({ id:'c'+Date.now(), subject, day, start, end, location, color });
+  saveData(); closeSheet(); render();
+}
+
+function openDayOptionsSheet(){
+  const d = new Date(selectedDate+'T00:00:00');
+  sheetContent.innerHTML = `
+    <h3>ปรับเปลี่ยนวัน${THAI_DAYS[d.getDay()]}ที่ ${d.getDate()} ${THAI_MONTHS_SHORT[d.getMonth()]}</h3>
+    <div class="opt-btn" onclick="openDaySwapForm()">สลับให้ใช้ตารางของวันอื่นทั้งวัน<div class="od">เช่น วันหยุดชดเชย ให้เรียนตามตารางวันจันทร์</div></div>
+    <div class="opt-btn" onclick="openCancelClassForm()">ยกเลิกคาบเรียนเฉพาะวันนี้<div class="od">ไม่ลบออกจากตารางประจำ</div></div>
+    <div class="opt-btn" onclick="openRescheduleForm()">เลื่อนเวลาคาบเรียนเฉพาะวันนี้</div>
+    <div class="opt-btn" onclick="openExtraClassForm()">เพิ่มคาบพิเศษเฉพาะวันนี้</div>
+    <div class="sheet-actions"><button class="btn btn-ghost" onclick="closeSheet()">ปิด</button></div>
+  `;
+  openSheet();
+}
+function openDaySwapForm(){
+  sheetContent.innerHTML = `
+    <h3>สลับตารางทั้งวัน</h3>
+    <div class="field"><label>ใช้ตารางของวัน</label>
+      <select id="ds-day">${THAI_DAYS.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="openDayOptionsSheet()">ย้อนกลับ</button>
+      <button class="btn btn-primary" onclick="saveDaySwap()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveDaySwap(){
+  const useDay = parseInt(document.getElementById('ds-day').value);
+  state.overrides = state.overrides.filter(o=>!(o.date===selectedDate && o.action==='dayswap'));
+  state.overrides.push({ id:'o'+Date.now(), date:selectedDate, action:'dayswap', useDay });
+  saveData(); closeSheet(); render();
+}
+function openCancelClassForm(){
+  const opts = getEffectiveClasses(selectedDate).filter(c=>!c._extra && !c._cancelled);
+  if(opts.length===0){ alert('ไม่มีคาบเรียนให้ยกเลิกในวันนี้'); openDayOptionsSheet(); return; }
+  sheetContent.innerHTML = `
+    <h3>ยกเลิกคาบเรียน (เฉพาะวันนี้)</h3>
+    <div class="field"><label>เลือกคาบ</label>
+      <select id="cc-class">${opts.map(c=>`<option value="${c.id}">${c.subject} (${c.start}-${c.end})</option>`).join('')}</select>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="openDayOptionsSheet()">ย้อนกลับ</button>
+      <button class="btn btn-primary" onclick="saveCancelClass()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveCancelClass(){
+  const classId = document.getElementById('cc-class').value;
+  state.overrides.push({ id:'o'+Date.now(), date:selectedDate, action:'cancel', classId });
+  saveData(); closeSheet(); render();
+}
+function openRescheduleForm(){
+  const opts = getEffectiveClasses(selectedDate).filter(c=>!c._extra && !c._cancelled);
+  if(opts.length===0){ alert('ไม่มีคาบเรียนให้เลื่อนในวันนี้'); openDayOptionsSheet(); return; }
+  sheetContent.innerHTML = `
+    <h3>เลื่อนเวลาคาบ (เฉพาะวันนี้)</h3>
+    <div class="field"><label>เลือกคาบ</label>
+      <select id="rs-class">${opts.map(c=>`<option value="${c.id}">${c.subject} (${c.start}-${c.end})</option>`).join('')}</select>
+    </div>
+    <div class="row2">
+      <div class="field"><label>เวลาเริ่มใหม่</label><input type="time" id="rs-start" value="08:00"></div>
+      <div class="field"><label>เวลาสิ้นสุดใหม่</label><input type="time" id="rs-end" value="09:00"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="openDayOptionsSheet()">ย้อนกลับ</button>
+      <button class="btn btn-primary" onclick="saveReschedule()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveReschedule(){
+  const classId = document.getElementById('rs-class').value;
+  const newStart = document.getElementById('rs-start').value;
+  const newEnd = document.getElementById('rs-end').value;
+  state.overrides = state.overrides.filter(o=>!(o.date===selectedDate && o.action==='reschedule' && o.classId===classId));
+  state.overrides.push({ id:'o'+Date.now(), date:selectedDate, action:'reschedule', classId, newStart, newEnd });
+  saveData(); closeSheet(); render();
+}
+function openExtraClassForm(){
+  sheetContent.innerHTML = `
+    <h3>เพิ่มคาบพิเศษ (เฉพาะวันนี้)</h3>
+    <div class="field"><label>วิชา/กิจกรรม</label><input id="ex-subject" placeholder="เช่น เรียนชดเชย"></div>
+    <div class="row2">
+      <div class="field"><label>เวลาเริ่ม</label><input type="time" id="ex-start" value="08:00"></div>
+      <div class="field"><label>เวลาสิ้นสุด</label><input type="time" id="ex-end" value="09:00"></div>
+    </div>
+    <div class="field"><label>สถานที่ (ไม่บังคับ)</label><input id="ex-loc"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="openDayOptionsSheet()">ย้อนกลับ</button>
+      <button class="btn btn-primary" onclick="saveExtraClass()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveExtraClass(){
+  const subject = document.getElementById('ex-subject').value.trim();
+  if(!subject){ alert('กรุณากรอกชื่อวิชา'); return; }
+  const start = document.getElementById('ex-start').value;
+  const end = document.getElementById('ex-end').value;
+  const location = document.getElementById('ex-loc').value.trim();
+  state.overrides.push({ id:'o'+Date.now(), date:selectedDate, action:'add', subject, start, end, location, color:COLORS.navy });
+  saveData(); closeSheet(); render();
+}
+
+function openExamSheet(){
+  sheetContent.innerHTML = `
+    <h3>เพิ่มตารางสอบ</h3>
+    ${subjectFieldHtml('exm','วิชา')}
+    <div class="field"><label>ชื่อการสอบ (ไม่บังคับ)</label><input id="e-title" placeholder="เช่น สอบกลางภาค"></div>
+    <div class="row2">
+      <div class="field"><label>วันที่สอบ</label><input type="date" id="e-date" value="${selectedDate}"></div>
+      <div class="field"><label>เวลา (ไม่บังคับ)</label><input type="time" id="e-time"></div>
+    </div>
+    <div class="field"><label>ห้องสอบ (ไม่บังคับ)</label><input id="e-loc"></div>
+    <div class="field"><label>หมายเหตุ (ไม่บังคับ)</label><textarea id="e-note"></textarea></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveExam()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveExam(){
+  const subject = getSubjectValue('exm');
+  if(!subject){ alert('กรุณาเลือกวิชา (หรือกด + เพิ่มวิชาใหม่แล้วกดปุ่มเพิ่ม)'); return; }
+  const title = document.getElementById('e-title').value.trim();
+  const date = document.getElementById('e-date').value || selectedDate;
+  const time = document.getElementById('e-time').value;
+  const location = document.getElementById('e-loc').value.trim();
+  const note = document.getElementById('e-note').value.trim();
+  state.exams.push({ id:'ex'+Date.now(), subject, title, date, time, location, note });
+  saveData(); closeSheet(); render();
+}
+
+function openHwSheet(){
+  sheetContent.innerHTML = `
+    <h3>เพิ่มการบ้าน/งานส่ง</h3>
+    ${subjectFieldHtml('hw','วิชา')}
+    <div class="field"><label>ชื่องาน</label><input id="h-title" placeholder="เช่น เขียนเรียงความ"></div>
+    <div class="row2">
+      <div class="field"><label>กำหนดส่งวันที่</label><input type="date" id="h-date" value="${addDays(todayStr(),1)}"></div>
+      <div class="field"><label>เวลา (ไม่บังคับ)</label><input type="time" id="h-time"></div>
+    </div>
+    <div class="field"><label>หมายเหตุ (ไม่บังคับ)</label><textarea id="h-note"></textarea></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveHw()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveHw(){
+  const subject = document.getElementById('h-subject').value.trim();
+  const title = document.getElementById('h-title').value.trim();
+  if(!subject || !title){ alert('กรุณากรอกวิชาและชื่องาน'); return; }
+  const dueDate = document.getElementById('h-date').value;
+  const dueTime = document.getElementById('h-time').value;
+  const note = document.getElementById('h-note').value.trim();
+  state.homework.push({ id:'h'+Date.now(), subject, title, dueDate, dueTime, note, done:false });
+  saveData(); closeSheet(); render();
+}
+
+function openTodoSheet(){
+  sheetContent.innerHTML = `
+    <h3>เพิ่มรายการ To-do</h3>
+    <div class="field"><label>รายการ</label><input id="t-title" placeholder="เช่น เตรียมอุปกรณ์กีฬา"></div>
+    <div class="row2">
+      <div class="field"><label>หมวดหมู่ (ไม่บังคับ)</label><input id="t-cat" placeholder="เช่น ส่วนตัว"></div>
+      <div class="field"><label>กำหนด (ไม่บังคับ)</label><input type="date" id="t-date"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveTodo()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveTodo(){
+  const title = document.getElementById('t-title').value.trim();
+  if(!title){ alert('กรุณากรอกรายการ'); return; }
+  const category = document.getElementById('t-cat').value.trim();
+  const dueDate = document.getElementById('t-date').value;
+  state.todos.push({ id:'t'+Date.now(), title, category, dueDate, done:false });
+  saveData(); closeSheet(); render();
+}
+
+function openScoreSheet(){
+  sheetContent.innerHTML = `
+    <h3>บันทึกคะแนนสอบ</h3>
+    <div class="field"><label>วิชา</label><input id="s-subject" placeholder="เช่น เคมี"></div>
+    <div class="field"><label>ชื่อการสอบ/งาน</label><input id="s-exam" placeholder="เช่น สอบย่อยบทที่ 3"></div>
+    <div class="row2">
+      <div class="field"><label>คะแนนที่ได้</label><input type="number" id="s-score" step="0.5"></div>
+      <div class="field"><label>คะแนนเต็ม</label><input type="number" id="s-max" step="0.5" value="100"></div>
+    </div>
+    <div class="field"><label>วันที่</label><input type="date" id="s-date" value="${todayStr()}"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveScore()">บันทึก</button>
+    </div>`;
+  openSheet();
+}
+function saveScore(){
+  const subject = document.getElementById('s-subject').value.trim();
+  const examName = document.getElementById('s-exam').value.trim();
+  const score = parseFloat(document.getElementById('s-score').value);
+  const maxScore = parseFloat(document.getElementById('s-max').value);
+  if(!subject || !examName || isNaN(score) || isNaN(maxScore) || maxScore<=0){ alert('กรุณากรอกข้อมูลให้ครบและถูกต้อง'); return; }
+  const date = document.getElementById('s-date').value || todayStr();
+  state.scores.push({ id:'sc'+Date.now(), subject, examName, score, maxScore, date });
+  saveData(); closeSheet(); render();
+}
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+loadData();
+</script>
+</body>
+</html>
