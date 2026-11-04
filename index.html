@@ -49,6 +49,18 @@ header h1{font-family:'Chonburi',serif; font-size:24px; margin:4px 0 0 0; line-h
 .prep-chip.hw{border-color:var(--coral); color:var(--coral);}
 .prep-chip.exam{border-color:var(--ink); color:var(--ink); font-weight:600;}
 .prep-empty{font-size:12.5px; color:var(--gray); margin-top:6px;}
+
+.quick-widget{margin:10px 18px 0;background:var(--card);border:2px solid var(--paper-line);border-radius:14px;padding:12px 14px;}
+.quick-widget-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+.quick-widget-title{font-family:'Kanit',sans-serif;font-weight:600;font-size:13px;}
+.quick-widget-date{font-size:11.5px;color:var(--gray);margin-top:1px;}
+.quick-widget-list{display:flex;flex-direction:column;gap:6px;}
+.quick-widget-item{display:flex;gap:9px;padding:6px 8px;border-radius:8px;background:var(--paper);font-size:12px;}
+.quick-widget-time{font-family:'Kanit',sans-serif;font-size:11.5px;color:var(--ink-soft);min-width:76px;}
+.quick-widget-empty{font-size:12px;color:var(--gray);padding:5px 0;}
+.quick-widget-more{font-size:11.5px;color:var(--gray);text-align:right;margin-top:5px;}
+.quick-widget-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px;}
+.quick-action{border:1px solid var(--paper-line);border-radius:9px;background:var(--paper);color:var(--ink-soft);font-family:'Kanit',sans-serif;font-size:12px;padding:8px 9px;text-align:left;cursor:pointer;}
 .tabs{display:flex; margin:18px 18px 0 18px; gap:5px; overflow-x:auto;}
 .tab{flex:0 0 auto; padding:10px 13px 9px 13px; font-family:'Kanit',sans-serif; font-weight:500; font-size:13.5px; border-radius:12px 12px 0 0; background:transparent; color:var(--gray); cursor:pointer; border:2px solid transparent; border-bottom:none; white-space:nowrap;}
 .tab.active{background:var(--card); color:var(--ink); border-color:var(--paper-line); font-weight:600;}
@@ -132,6 +144,7 @@ header h1{font-family:'Chonburi',serif; font-size:24px; margin:4px 0 0 0; line-h
   </header>
   <div class="hero" id="hero"></div>
   <div class="prep-card" id="prepCard"></div>
+  <div class="quick-widget" id="quickWidget"></div>
   <div class="notify-row"><button class="link-btn" id="notifyBtn" onclick="requestNotifyPermission()">🔔 เปิดการแจ้งเตือนในเบราว์เซอร์</button></div>
   <div class="tabs">
     <div class="tab active" data-tab="schedule" onclick="switchTab('schedule')">ตารางเรียน</div>
@@ -402,6 +415,27 @@ function renderPrepCard(){
   `;
 }
 
+function renderQuickWidget(){
+  const el = document.getElementById('quickWidget');
+  if(!el) return;
+  const today = todayStr();
+  const date = new Date(today+'T00:00:00');
+  const classes = getEffectiveClasses(today).filter(c=>!c._cancelled);
+  const rows = classes.slice(0,3).map(c=>'<div class="quick-widget-item"><span class="quick-widget-time">'+escapeHtml(c.start||'')+'–'+escapeHtml(c.end||'')+'</span><span>'+escapeHtml(c.subject||'')+(c.location?' · '+escapeHtml(c.location):'')+'</span></div>').join('');
+  el.innerHTML = '<div class="quick-widget-header"><div><div class="quick-widget-title">ตารางวันนี้</div><div class="quick-widget-date">วัน'+THAI_DAYS[date.getDay()]+' '+date.getDate()+' '+THAI_MONTHS_SHORT[date.getMonth()]+' '+(date.getFullYear()+543)+'</div></div><button type="button" class="link-btn" data-open-today>ดูเต็ม</button></div>' + (rows ? '<div class="quick-widget-list">'+rows+'</div>' : '<div class="quick-widget-empty">วันนี้ไม่มีคาบเรียน</div>') + (classes.length>3 ? '<div class="quick-widget-more">อีก '+(classes.length-3)+' คาบ</div>' : '') + '<div class="quick-widget-actions"><button type="button" class="quick-action" data-quick-tab="hw">＋ การบ้าน</button><button type="button" class="quick-action" data-quick-tab="todo">＋ To-do</button><button type="button" class="quick-action" data-quick-tab="exam">＋ สอบ</button><button type="button" class="quick-action" data-quick-tab="schedule">＋ คาบเรียน</button></div>';
+  el.querySelector('[data-open-today]').addEventListener('click', openTodaySchedule);
+  el.querySelectorAll('[data-quick-tab]').forEach(btn=>btn.addEventListener('click', ()=>openQuickAdd(btn.dataset.quickTab)));
+}
+function openTodaySchedule(){ selectedDate=todayStr(); switchTab('schedule'); }
+function openQuickAdd(tab){
+  if(tab==='schedule') selectedDate=todayStr();
+  switchTab(tab);
+  if(tab==='schedule') openClassSheet();
+  else if(tab==='exam') openExamSheet();
+  else if(tab==='hw') openHwSheet();
+  else if(tab==='todo') openTodoSheet();
+}
+
 function switchTab(tab){
   activeTab = tab;
   document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active', el.dataset.tab===tab));
@@ -412,6 +446,7 @@ function render(){
   if(!loaded) return;
   renderHero();
   renderPrepCard();
+  renderQuickWidget();
   checkAndNotify();
   const panel = document.getElementById('panel');
   if(activeTab==='schedule') panel.innerHTML = renderScheduleTab();
