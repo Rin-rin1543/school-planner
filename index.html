@@ -763,7 +763,7 @@ function openHwSheet(){
   openSheet();
 }
 function saveHw(){
-  const subject = document.getElementById('h-subject').value.trim();
+  const subject = getSubjectValue('hw');
   const title = document.getElementById('h-title').value.trim();
   if(!subject || !title){ alert('กรุณากรอกวิชาและชื่องาน'); return; }
   const dueDate = document.getElementById('h-date').value;
